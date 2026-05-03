@@ -1,0 +1,103 @@
+rules_version = '2';
+
+// OWASP A01 — Broken Access Control
+// Every rule is the minimum necessary access. Default deny.
+//
+// Data model:
+//   users/{uid}                          — user profile
+//   users/{uid}/conversations/{cid}      — conversation metadata
+//   users/{uid}/conversations/{cid}/messages/{mid}  — individual messages
+//   electionData/{docId}                 — public election information
+//   translations/{hash}                  — cached translations (read-only for clients)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.admin == true;
+    }
+
+    function isValidMessage() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['content', 'role', 'createdAt', 'conversationId'])
+        && data.content is string
+        && data.content.size() > 0
+        && data.content.size() <= 10000
+        && data.role in ['user', 'assistant', 'system']
+        && data.createdAt is int
+        && data.createdAt > 0;
+    }
+
+    function isValidConversation() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['uid', 'language', 'createdAt', 'updatedAt'])
+        && data.language is string
+        && data.language.size() == 2;
+    }
+
+    // ─── User profiles ──────────────────────────────────────────────
+    match /users/{uid} {
+      // Users can only read/write their own profile
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+        && request.resource.data.uid == uid;
+      allow update: if isOwner(uid)
+        // Prevent overwriting uid field
+        && request.resource.data.uid == resource.data.uid
+        // Field-level restriction: only allow these fields to be updated
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['language', 'region', 'country', 'onboardingCompleted', 'updatedAt', 'displayName', 'email']);
+      allow delete: if false; // Soft-delete only via Cloud Function
+
+      // ─── Conversations (subcollection) ──────────────────────────
+      match /conversations/{conversationId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidConversation();
+        allow update: if isOwner(uid)
+          // Only allow updating mutable fields
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['title', 'updatedAt', 'messageCount']);
+        allow delete: if isOwner(uid);
+
+        // ─── Messages (subcollection) ──────────────────────────────
+        match /messages/{messageId} {
+          allow read: if isOwner(uid);
+          allow create: if isOwner(uid) && isValidMessage();
+          allow update: if false; // Messages are immutable once written
+          allow delete: if isOwner(uid);
+        }
+      }
+    }
+
+    // ─── Public election data ────────────────────────────────────────
+    // Readable by any authenticated user; writable only by admins
+    match /electionData/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ─── Translation cache ───────────────────────────────────────────
+    // Client-side read access for cached translations; write via server only
+    match /translations/{hash} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Written only by Cloud Run backend
+    }
+
+    // ─── Default deny ────────────────────────────────────────────────
+    // Any path not matched above is denied (default Firestore behavior,
+    // made explicit here for documentation clarity)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,48 @@
+# Dependencies
+node_modules
+frontend/node_modules
+functions/node_modules
+.npm
+
+# Build outputs
+frontend/.next
+frontend/out
+build
+
+# Firebase
+.firebase
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Dev / local
+.env.local
+.env*.local
+frontend/.env.local
+*.local
+
+# Tests
+frontend/coverage
+frontend/playwright-report
+frontend/test-results
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Credentials (NEVER include)
+*.key
+*.pem
+*.json.bak
+service-account*.json
+google-credentials*.json

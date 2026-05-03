@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+functions/node_modules/
+.npm/
+
+# Build outputs
+.next/
+frontend/.next/
+frontend/out/
+build/
+dist/
+
+# Firebase local
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Environment secrets — NEVER commit
+.env.local
+.env*.local
+frontend/.env.local
+frontend/.env*.local
+*.key
+*.pem
+service-account*.json
+google-credentials*.json
+
+# Coverage & test artifacts
+coverage/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+frontend/playwright-results.json
+
+# OS
+.DS_Store
+Thumbs.db
+*.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+
+# Logs
+*.log
+logs/
+
+# TypeScript compiled output
+*.js.map
+*.d.ts.map
+frontend/.git/
+frontend/app_old_scaffold/
+frontend/next.config.mjs.bak
+frontend/tsconfig.tsbuildinfo

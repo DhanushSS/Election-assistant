@@ -1,0 +1,135 @@
+# Google Cloud Build — election-assistant-prod
+# WHY Cloud Build over GitHub Actions: Google-native CI/CD, Workload Identity
+# integration, Cloud Build triggers on source repo changes, no token management.
+#
+# Trigger this pipeline via:
+#   gcloud builds submit --config=cloudbuild.yaml .
+#
+# Or set up a Cloud Build trigger on the main branch in Cloud Console.
+
+substitutions:
+  _REGION: us-central1
+  _SERVICE: election-assistant-api
+  _IMAGE: gcr.io/$PROJECT_ID/election-assistant:$SHORT_SHA
+  _MIN_INSTANCES: '1'
+  _MAX_INSTANCES: '10'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  dynamic_substitutions: true
+
+steps:
+  # ─── Step 1: Install dependencies ─────────────────────────────────────────
+  - name: 'node:20-alpine'
+    id: install
+    dir: frontend
+    entrypoint: npm
+    args: ['ci']
+
+  # ─── Step 2: Type check ────────────────────────────────────────────────────
+  - name: 'node:20-alpine'
+    id: typecheck
+    dir: frontend
+    entrypoint: npx
+    args: ['tsc', '--noEmit']
+    waitFor: ['install']
+
+  # ─── Step 3: Unit tests ────────────────────────────────────────────────────
+  - name: 'node:20-alpine'
+    id: unit-tests
+    dir: frontend
+    entrypoint: npm
+    args: ['test', '--', '--coverage', '--passWithNoTests']
+    waitFor: ['typecheck']
+    env:
+      - 'CI=true'
+
+  # ─── Step 4: Build Docker image (multi-stage) ──────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build-image
+    args:
+      - 'build'
+      - '--target'
+      - 'production'
+      - '--tag'
+      - '$_IMAGE'
+      - '--tag'
+      - 'gcr.io/$PROJECT_ID/election-assistant:latest'
+      - '--cache-from'
+      - 'gcr.io/$PROJECT_ID/election-assistant:latest'
+      - '--build-arg'
+      - 'BUILDKIT_INLINE_CACHE=1'
+      - '.'
+    waitFor: ['unit-tests']
+
+  # ─── Step 5: Push to Container Registry ───────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push-image
+    args: ['push', '$_IMAGE']
+    waitFor: ['build-image']
+
+  # ─── Step 6: Deploy Firestore indexes + rules ──────────────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-firestore
+    entrypoint: firebase
+    args:
+      - 'deploy'
+      - '--only'
+      - 'firestore:rules,firestore:indexes'
+      - '--project'
+      - '$PROJECT_ID'
+      - '--non-interactive'
+    waitFor: ['push-image']
+
+  # ─── Step 7: Deploy to Cloud Run ──────────────────────────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-cloud-run
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_SERVICE'
+      - '--image'
+      - '$_IMAGE'
+      - '--region'
+      - '$_REGION'
+      - '--platform'
+      - 'managed'
+      - '--min-instances'
+      - '$_MIN_INSTANCES'
+      - '--max-instances'
+      - '$_MAX_INSTANCES'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+      - '--timeout'
+      - '300'
+      - '--concurrency'
+      - '80'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,VERTEX_AI_LOCATION=us-central1'
+      - '--service-account'
+      - 'election-assistant-sa@$PROJECT_ID.iam.gserviceaccount.com'
+    waitFor: ['deploy-firestore']
+
+  # ─── Step 8: Deploy Firebase Hosting ──────────────────────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-hosting
+    entrypoint: firebase
+    args:
+      - 'deploy'
+      - '--only'
+      - 'hosting'
+      - '--project'
+      - '$PROJECT_ID'
+      - '--non-interactive'
+    waitFor: ['deploy-cloud-run']
+
+images:
+  - '$_IMAGE'
+  - 'gcr.io/$PROJECT_ID/election-assistant:latest'
+
+# Send build results to Cloud Logging
+logsBucket: 'gs://$PROJECT_ID-cloudbuild-logs'
