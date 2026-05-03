@@ -1,26 +1,4 @@
 {
-  "indexes": [
-    {
-      "collectionGroup": "messages",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "sessionId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "messages",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    }
-  ],
-  "fieldOverrides": [
-    {
-      "collectionGroup": "messages",
-      "fieldPath": "expiresAt",
-      "indexes": []
-    }
-  ]
+  "indexes": [],
+  "fieldOverrides": []
 }

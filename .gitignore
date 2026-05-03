@@ -57,3 +57,5 @@ frontend/.git/
 frontend/app_old_scaffold/
 frontend/next.config.mjs.bak
 frontend/tsconfig.tsbuildinfo
+firebase-admin.json
+*.json.secret
