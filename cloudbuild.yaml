@@ -82,8 +82,7 @@ steps:
       - '--port=3000'
       - '--memory=512Mi'
       - '--cpu=1'
-      - '--set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest'
-      - '--set-env-vars=NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1'
+      - '--set-env-vars=GEMINI_API_KEY=AIzaSyBB0NKZwZp08qB8DWfzSdztuhDtI1wFFA0,NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1'
 
 timeout: '1800s'
 
