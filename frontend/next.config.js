@@ -23,6 +23,7 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
               "connect-src 'self' https://*.googleapis.com https://generativelanguage.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com",
+              "media-src 'self' https://d8j0ntlcm91z4.cloudfront.net blob:",
               "frame-src 'none'",
               "object-src 'none'",
               "base-uri 'self'",

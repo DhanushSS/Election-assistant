@@ -17,6 +17,7 @@ export function HeroSection() {
   return (
     <section
       className="relative min-h-screen w-full overflow-hidden flex flex-col"
+      style={{ background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' }}
       aria-label="VoteAI India — Hero"
     >
       {/* ── Video Background ─────────────────────────── */}
