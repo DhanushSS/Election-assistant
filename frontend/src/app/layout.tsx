@@ -1,57 +1,45 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
-import { AuthProvider } from '@/features/auth/hooks/useAuth';
+import { TranslationProvider } from '../features/translation/TranslationContext';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   title: {
-    default: 'Election Assistant — Powered by Google Vertex AI',
-    template: '%s | Election Assistant',
+    default: 'VoteAI India — Your Guide to Indian Elections',
+    template: '%s | VoteAI India',
   },
   description:
-    'Understand the election process, timelines, and steps with an AI-powered civic assistant. Get answers about voter registration, deadlines, and polling information.',
-  keywords: [
-    'election', 'voting', 'voter registration', 'election assistant',
-    'civic', 'AI', 'Google Vertex AI',
-  ],
-  authors: [{ name: 'Election Assistant Team' }],
-  robots: { index: true, follow: true },
+    'AI-powered guide to Indian elections — Lok Sabha, Rajya Sabha, state elections, voter registration, ECI processes, EVMs, and the democratic process. Powered by Google Vertex AI.',
+  keywords: ['Indian elections', 'Lok Sabha', 'voter registration', 'ECI', 'EVM', 'VVPAT', 'Form 6'],
   openGraph: {
-    title: 'Election Assistant — Know Your Vote',
-    description: 'AI-powered guidance for every step of the election process.',
+    title: 'VoteAI India',
+    description: 'Your AI guide to Indian elections powered by Google Vertex AI',
     type: 'website',
-    locale: 'en_US',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Election Assistant',
-    description: 'AI-powered civic guidance powered by Google Vertex AI.',
+    locale: 'en_IN',
   },
 };
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 5,
-  themeColor: '#0d1f3c',
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" style={{ colorScheme: 'light' }} className={inter.variable}>
       <head>
-        <link rel="preconnect" href="https://api.fontshare.com" />
-        {/* Critical security headers are set in next.config.js */}
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="color-scheme" content="light" />
       </head>
-      <body>
-        {/* Skip navigation — WCAG 2.4.1 */}
+      <body className={`${inter.className} bg-white text-gray-900 antialiased`}>
+        {/* Skip navigation for accessibility */}
         <a href="#main-content" className="skip-nav">
           Skip to main content
         </a>
-        <AuthProvider>{children}</AuthProvider>
+        <TranslationProvider>
+          <main id="main-content">{children}</main>
+        </TranslationProvider>
       </body>
     </html>
   );
